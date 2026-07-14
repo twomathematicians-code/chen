@@ -1,0 +1,14 @@
+name: Dependabot
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"  # Weekly on Sundays at 00:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This workflow exists to anchor the dependabot config below."

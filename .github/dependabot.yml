@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    groups:
+      dev-deps:
+        patterns:
+          - "pytest*"
+          - "ruff"
+          - "mypy"
+          - "pre-commit"
+      hf-deps:
+        patterns:
+          - "transformers"
+          - "torch"
+          - "tokenizers"
+          - "accelerate"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    labels: ["dependencies", "ci"]

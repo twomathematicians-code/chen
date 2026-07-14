@@ -1,0 +1,95 @@
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual envs
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# Testing / coverage
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Linters
+.ruff_cache/
+.pre-commit-cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+profile_default/
+ipython_config.py
+
+# Project-specific
+.env
+.env.local
+.env.*.local
+models/
+model_cache/
+*.gguf
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.onnx
+chen_data/
+chen_cache/
+benchmarks/results/
+benchmark_results/
+*.log
+logs/
+
+# Built docs
+docs/_build/
+docs/site/
+site/

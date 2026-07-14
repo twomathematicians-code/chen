@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+title: "CHEN: Collaborative Heterogeneous Expert Network"
+message: >-
+  If you use CHEN in your research, please cite it using the metadata
+  below. The project is released into the public domain under CC0 1.0.
+type: software
+authors:
+  - given-names: "CHEN"
+    family-names: "Contributors"
+    affiliation: "Community"
+repository-code: "https://github.com/your-org/chen"
+url: "https://github.com/your-org/chen"
+abstract: >-
+  CHEN is a distributed inference architecture that replaces a single
+  monolithic hyper-scale model with a coordinated network of specialized,
+  low-parameter models (3B-8B). It routes tokens through a dynamic pipeline
+  and shares latent memory states (KV-caches) between models, simulating
+  the parameter capacity and reasoning depth of a frontier model at a
+  fraction of the compute cost. The repository implements three pillars —
+  the Latent State Router, Specialized Micro-Experts, and Shared External
+  Memory — across three experimental phases (static cascade, KV-cache
+  passing, and dynamic routing), with a benchmark harness measuring
+  Effective Parameter Utilization (EPU), cost-per-1M-tokens, and
+  latency-to-accuracy ratio.
+keywords:
+  - distributed-inference
+  - mixture-of-experts
+  - kv-cache
+  - small-language-models
+  - routing
+  - rag
+  - llm
+  - decentralized-ai
+license: CC0-1.0
+version: "0.1.0"
+date-released: "2025-01-15"
+preferred-citation:
+  type: software
+  title: "CHEN: Collaborative Heterogeneous Expert Network"
+  authors:
+    - given-names: "CHEN"
+      family-names: "Contributors"
+  year: 2025
+  url: "https://github.com/your-org/chen"
