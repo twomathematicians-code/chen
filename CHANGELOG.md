@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reproduction configs for MMLU, HumanEval, GSM8K.
 - OpenTelemetry distributed tracing.
 - Helm chart for Kubernetes deployment.
+- Carbon-aware scheduling — route to lower-carbon experts based on real-time grid intensity (Electricity Maps API integration).
+- Real-time carbon footprint dashboard (Scaphandre / Kepler integration).
 
 ## [0.2.0] — 2025-07-15
 
@@ -75,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/operations/observability.md` — log events table, Prometheus metrics reference, example queries, alerting rules.
 - `docs/operations/runbooks/incident-response.md` — severity levels, triage steps, 5 common incident playbooks, postmortem process.
 - `docs/operations/runbooks/performance-debugging.md` — profiling steps, bottleneck table, backend selection guide.
+- `docs/sustainability.md` — **NEW in v0.2.0**: full methodology for the sustainability claims in the README, including per-query energy calculation, carbon footprint, water usage, hardware reduction, annual impact at scale, methodology assumptions & sources, how to measure your own deployment, and comparison with other approaches (internal MoE, quantization, distillation).
 
 **MkDocs Material documentation site:**
 - `mkdocs.yml` configured with Material theme, dark/light mode, Mermaid support, MathJax, mkdocstrings API reference.

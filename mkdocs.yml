@@ -125,6 +125,7 @@ extra:
 
 nav:
   - Home: README.md
+  - Sustainability: sustainability.md
   - Architecture:
       - Overview: architecture/overview.md
   - Math:
