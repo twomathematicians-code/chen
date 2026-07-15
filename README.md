@@ -1,7 +1,5 @@
 # CHEN — Collaborative Heterogeneous Expert Network
 
-> Replace one giant model with a coordinated *garage* of small, specialized models — and pass **latent memory** between them instead of plain text.
-
 [![CI](https://img.shields.io/badge/CI-passing-brightgreen)](.github/workflows/ci.yml)
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
