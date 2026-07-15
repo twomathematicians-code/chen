@@ -62,6 +62,24 @@ class InferRequest(BaseModel):
         description="Tenant ID for multi-tenant memory isolation.",
         max_length=128,
     )
+    # Per-expert model overrides (optional — defaults from env vars)
+    analyst_model: Optional[str] = Field(  # noqa: UP045
+        None, description="Override model for the Analyst expert.", max_length=256
+    )
+    reasoner_model: Optional[str] = Field(  # noqa: UP045
+        None, description="Override model for the Reasoner expert.", max_length=256
+    )
+    coder_model: Optional[str] = Field(  # noqa: UP045
+        None, description="Override model for the Coder expert.", max_length=256
+    )
+    synthesizer_model: Optional[str] = Field(  # noqa: UP045
+        None, description="Override model for the Synthesizer expert.", max_length=256
+    )
+    trace_id: Optional[str] = Field(  # noqa: UP045
+        None,
+        description="Optional trace ID for distributed tracing correlation.",
+        max_length=128,
+    )
 
 
 class ExpertMetricsModel(BaseModel):
@@ -93,6 +111,7 @@ class InferResponse(BaseModel):
     # safety net, but Optional[str] is the correct, portable fix.
     run_id: Optional[str] = None  # noqa: UP045
     config_hash: str
+    trace_id: Optional[str] = None  # noqa: UP045
 
 
 class RunSummary(BaseModel):

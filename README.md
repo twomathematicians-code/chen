@@ -7,7 +7,7 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://docs.astral.sh/ruff/)
 [![Coverage](https://img.shields.io/badge/coverage-83%25-brightgreen)](tests/)
-[![Version](https://img.shields.io/badge/version-0.3.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue)](CHANGELOG.md)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](docker/Dockerfile)
 [![Docs](https://img.shields.io/badge/docs-mkdocs-0066CC)](https://your-org.github.io/chen/)
 
@@ -19,7 +19,7 @@
 
 Where a traditional monolith loads 70B parameters into VRAM for *every* query — even trivial ones — CHEN keeps a roster of cheap specialists asleep and only wakes the ones a tiny router decides are needed. Where existing Mixture-of-Experts (MoE) systems like Mixtral do this *inside* a single neural network, CHEN does it **externally** — between completely separate, independently-trained, swappable models. You can upgrade one expert without touching the others, and you can build the entire system on a single consumer GPU (or even a CPU, using the bundled mock backend).
 
-**v0.3.0 — production-grade release.** CHEN now ships with real vLLM and llama.cpp backends (full KV-cache extraction), API key authentication with RBAC, rate limiting, configurable CORS, PostgreSQL run store for multi-replica deployments, SSE streaming, multi-tenant memory isolation, circuit breakers, and OpenTelemetry tracing — plus everything from v0.2.0 (CLI, HTTP API, observability, SQLite persistence, reproducibility, 8 ADRs, math specs, threat model, Mermaid diagrams, Docker, pre-commit, property tests, benchmarks, MkDocs site).
+**v0.4.0 — industry-grade completion.** CHEN now ships with standard benchmark tasks (MMLU, HumanEval, GSM8K), tamper-proof audit logging (hash-chained for SOC 2/GDPR compliance), carbon-aware scheduling (Electricity Maps integration), a full Kubernetes Helm chart, Grafana dashboard + Prometheus alerting rules + AlertManager config, and a Locust load testing suite — plus everything from v0.3.0 (real vLLM/llama.cpp backends, API key auth + RBAC, rate limiting, Postgres run store, SSE streaming, multi-tenant memory, circuit breakers, OpenTelemetry tracing) and v0.2.0 (CLI, HTTP API, observability, encryption, 11 ADRs, math specs, threat model, Docker, MkDocs site).
 
 ### Why this matters now — sustainability is the primary design intent
 
@@ -551,17 +551,27 @@ CI runs on every push: ruff + mypy + pytest on Python 3.9, 3.10, 3.11, 3.12 acro
 - [x] Circuit breaker for expert backends (CLOSED/OPEN/HALF_OPEN)
 - [x] OpenTelemetry tracing scaffolding (no-op without OTel installed)
 
-**Planned for v0.4.0:**
+**Shipped in v0.4.0:**
+- [x] Standard benchmark tasks: MMLU, HumanEval, GSM8K (with custom graders)
+- [x] Audit logging — hash-chained, tamper-proof, SOC 2/GDPR compliant
+- [x] Carbon-aware scheduling — Electricity Maps API integration
+- [x] Kubernetes Helm chart (deployment, service, PVC, ingress, HPA, ServiceMonitor)
+- [x] Grafana dashboard (10 panels: latency, expert invocations, KV transfers, circuit breakers)
+- [x] Prometheus alerting rules (9 alerts: availability, latency, KV failures, capacity)
+- [x] AlertManager config (Slack + email, severity-based routing)
+- [x] Locust load testing suite + soak test script
+- [x] Per-expert model overrides in InferRequest
+- [x] trace_id + tenant_id fields in RunRecord (with SQLite auto-migration)
+
+**Planned for v0.5.0:**
 - [ ] Auto-tuner that learns the optimal router from observed KPIs
-- [ ] Helm chart for Kubernetes deployment
 - [ ] Real-time carbon footprint dashboard (Scaphandre / Kepler integration)
-- [ ] Reproduction configs for MMLU, HumanEval, GSM8K
-- [ ] Carbon-aware scheduling — route to lower-carbon experts based on real-time grid intensity
 - [ ] Direct vLLM KV-cache injection (v0.3.0 re-encodes; direct block injection is roadmap)
 - [ ] Batched inference — group similar-queue prompts for the same expert
 - [ ] Model versioning & A/B testing — run two Reasoner variants side-by-side
-- [ ] Audit logging — tamper-proof log of all prompts/outputs for compliance
 - [ ] Data encryption at rest — encrypt SQLite/Postgres run store contents
+- [ ] Chaos engineering test suite
+- [ ] OAuth2/OIDC authentication provider
 
 ---
 

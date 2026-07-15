@@ -1,0 +1,217 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "CHEN — Collaborative Heterogeneous Expert Network observability dashboard",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Request Rate (req/s)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(rate(chen_requests_total[1m]))",
+          "legendFormat": "req/s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 50},
+              {"color": "red", "value": 100}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Active Pipelines",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "targets": [
+        {
+          "expr": "chen_active_pipelines",
+          "legendFormat": "active",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Error Rate (%)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(rate(chen_requests_total{status=~\"5..\"}[5m])) / sum(rate(chen_requests_total[5m])) * 100",
+          "legendFormat": "errors",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 0.1},
+              {"color": "red", "value": 1.0}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Tokens Processed (tokens/s)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(rate(chen_tokens_processed_total[1m]))",
+          "legendFormat": "tokens/s",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Request Latency (p50, p95, p99)",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(chen_request_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(chen_request_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(chen_request_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
+      ],
+      "yAxes": [{"format": "s"}],
+      "legend": {"show": true, "values": true}
+    },
+    {
+      "title": "Expert Invocations (by expert)",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "targets": [
+        {
+          "expr": "sum by (expert_name) (rate(chen_expert_invocations_total[5m]))",
+          "legendFormat": "{{expert_name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "KV-Cache Transfer Success Rate (%)",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 6, "w": 8, "x": 0, "y": 12},
+      "targets": [
+        {
+          "expr": "sum(rate(chen_kv_cache_transfers_total{result=\"success\"}[5m])) / sum(rate(chen_kv_cache_transfers_total[5m])) * 100",
+          "legendFormat": "success rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 80},
+              {"color": "green", "value": 95}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Pipeline Runs by Phase",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 6, "w": 8, "x": 8, "y": 12},
+      "targets": [
+        {
+          "expr": "sum by (phase) (rate(chen_pipeline_runs_total[5m]))",
+          "legendFormat": "Phase {{phase}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Circuit Breaker States",
+      "type": "table",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 6, "w": 8, "x": 16, "y": 12},
+      "targets": [
+        {
+          "expr": "chen_circuit_state",
+          "legendFormat": "{{name}}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "title": "HTTP Status Code Distribution",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 18},
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(chen_requests_total[5m]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": ["chen", "llm", "ai-infrastructure"],
+  "templating": {
+    "list": []
+  },
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "CHEN — Collaborative Heterogeneous Expert Network",
+  "uid": "chen-overview",
+  "version": 1
+}

@@ -1,0 +1,191 @@
+# CHEN Helm Chart — Default values
+# Override these with: helm install chen ./helm/chen -f my-values.yaml
+
+# ---------------------------------------------------------------------------
+# Deployment
+# ---------------------------------------------------------------------------
+replicaCount: 1
+
+image:
+  repository: ghcr.io/your-org/chen
+  tag: "0.4.0"
+  pullPolicy: IfNotPresent
+
+# ---------------------------------------------------------------------------
+# CHEN application config
+# ---------------------------------------------------------------------------
+chen:
+  # Backend: mock | hf | vllm | llama_cpp
+  backend: mock
+
+  # Log level: DEBUG | INFO | WARNING | ERROR
+  logLevel: INFO
+  logJson: "1"
+
+  # Default port
+  port: 8000
+
+  # Run store: sqlite | postgres
+  runStoreBackend: sqlite
+
+  # Security
+  corsOrigins: "*"
+  rateLimitPerMinute: "60"
+  # Set to "1" to enable strict security mode (no MockBackend in prod)
+  securityHardened: "0"
+
+  # Tracing (OpenTelemetry)
+  tracingEnabled: "0"
+  tracingExporter: otlp
+  tracingEndpoint: http://otel-collector:4317
+  tracingSampleRate: "0.1"
+
+  # Carbon-aware scheduling
+  carbonAware: "0"
+  defaultZone: US-NW
+
+# ---------------------------------------------------------------------------
+# Authentication
+# ---------------------------------------------------------------------------
+auth:
+  enabled: false
+  # If enabled, provide API keys as a secret.
+  # Create with: kubectl create secret generic chen-api-keys --from-file=api_keys.json=chen_data/api_keys.json
+  existingSecret: ""
+  keysFile: ""  # inline JSON (overrides existingSecret)
+
+# ---------------------------------------------------------------------------
+# HuggingFace backend
+# ---------------------------------------------------------------------------
+hf:
+  # Set to enable HF backend (requires token for gated models)
+  token: ""
+  analystModel: "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+  reasonerModel: "Qwen/Qwen2.5-3B-Instruct"
+  coderModel: "Qwen/Qwen2.5-3B-Instruct"
+  synthesizerModel: "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+  device: auto
+
+# ---------------------------------------------------------------------------
+# PostgreSQL (for production multi-replica)
+# ---------------------------------------------------------------------------
+postgres:
+  enabled: false
+  # If enabled, CHEN uses Postgres instead of SQLite for run store.
+  dsn: ""  # postgresql://user:pass@postgres:5432/chen
+  existingSecret: ""
+  secretKey: postgres-dsn
+
+# ---------------------------------------------------------------------------
+# Resource limits
+# ---------------------------------------------------------------------------
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# ---------------------------------------------------------------------------
+# GPU support (for HF/vLLM backends)
+# ---------------------------------------------------------------------------
+gpu:
+  enabled: false
+  count: 1
+  type: nvidia.com/gpu
+  # vLLM requires CUDA; HF works on CPU too.
+
+# ---------------------------------------------------------------------------
+# Persistence (for SQLite run store)
+# ---------------------------------------------------------------------------
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 10Gi
+  accessMode: ReadWriteOnce
+
+# ---------------------------------------------------------------------------
+# Horizontal Pod Autoscaler
+# ---------------------------------------------------------------------------
+hpa:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# ---------------------------------------------------------------------------
+# Service
+# ---------------------------------------------------------------------------
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+# ---------------------------------------------------------------------------
+# Ingress
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: chen.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: chen-tls
+      hosts:
+        - chen.example.com
+
+# ---------------------------------------------------------------------------
+# Probes
+# ---------------------------------------------------------------------------
+livenessProbe:
+  httpGet:
+    path: /v1/health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /v1/health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  failureThreshold: 3
+
+# ---------------------------------------------------------------------------
+# Prometheus ServiceMonitor
+# ---------------------------------------------------------------------------
+serviceMonitor:
+  enabled: false
+  namespace: monitoring
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /v1/metrics
+
+# ---------------------------------------------------------------------------
+# Node selector / tolerations / affinity
+# ---------------------------------------------------------------------------
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# ---------------------------------------------------------------------------
+# Pod-level security
+# ---------------------------------------------------------------------------
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false  # CHEN needs to write to chen_data/
+  capabilities:
+    drop:
+      - ALL

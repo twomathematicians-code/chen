@@ -1,0 +1,141 @@
+# CHEN — Prometheus Alerting Rules
+#
+# Load these into Prometheus via prometheus.yml:
+#   rule_files:
+#     - /etc/prometheus/rules/chen-alerts.yml
+
+groups:
+  - name: chen
+    interval: 30s
+    rules:
+      # ---------------------------------------------------------------------------
+      # Availability alerts
+      # ---------------------------------------------------------------------------
+      - alert: ChenDown
+        expr: up{job="chen"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: chen-oncall
+        annotations:
+          summary: "CHEN server is down"
+          description: "{{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: ChenHighErrorRate
+        expr: |
+          sum(rate(chen_requests_total{status=~"5.."}[5m]))
+            / sum(rate(chen_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          team: chen-oncall
+        annotations:
+          summary: "CHEN API error rate above 5%"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      # ---------------------------------------------------------------------------
+      # Latency alerts
+      # ---------------------------------------------------------------------------
+      - alert: ChenHighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(chen_request_latency_seconds_bucket[5m])) by (le)
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: chen-oncall
+        annotations:
+          summary: "CHEN p99 latency above 10 seconds"
+          description: "p99 latency is {{ $value }}s. SLO is < 5s."
+
+      - alert: ChenHighLatencyP50
+        expr: |
+          histogram_quantile(0.50,
+            sum(rate(chen_request_latency_seconds_bucket[5m])) by (le)
+          ) > 3
+        for: 5m
+        labels:
+          severity: info
+          team: chen-oncall
+        annotations:
+          summary: "CHEN p50 latency above 3 seconds"
+          description: "p50 latency is {{ $value }}s. SLO is < 2s."
+
+      # ---------------------------------------------------------------------------
+      # KV-cache alerts
+      # ---------------------------------------------------------------------------
+      - alert: ChenKVTransferFailures
+        expr: |
+          rate(chen_kv_cache_transfers_total{result="failure"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: chen-oncall
+        annotations:
+          summary: "CHEN KV-cache transfer failures"
+          description: "{{ $value }} failures/sec over the last 5 minutes. Check expert compatibility."
+
+      - alert: ChenKVTransferSuccessRateLow
+        expr: |
+          sum(rate(chen_kv_cache_transfers_total{result="success"}[5m]))
+            / sum(rate(chen_kv_cache_transfers_total[5m])) < 0.80
+        for: 10m
+        labels:
+          severity: warning
+          team: chen-oncall
+        annotations:
+          summary: "CHEN KV-cache transfer success rate below 80%"
+          description: "Phase 2 is degrading — most transfers are falling back to text."
+
+      # ---------------------------------------------------------------------------
+      # Capacity alerts
+      # ---------------------------------------------------------------------------
+      - alert: ChenHighActivePipelines
+        expr: chen_active_pipelines > 50
+        for: 5m
+        labels:
+          severity: warning
+          team: chen-oncall
+        annotations:
+          summary: "CHEN has high active pipeline count"
+          description: "{{ $value }} active pipelines. Consider scaling up."
+
+      - alert: ChenExpertInvocationsZero
+        expr: |
+          sum by (expert_name) (rate(chen_expert_invocations_total[5m])) == 0
+        for: 10m
+        labels:
+          severity: info
+          team: chen-oncall
+        annotations:
+          summary: "CHEN expert {{ $labels.expert_name }} has zero invocations"
+          description: "Expert has not been invoked in 10 minutes. Check router or circuit breaker."
+
+      # ---------------------------------------------------------------------------
+      # Circuit breaker alerts
+      # ---------------------------------------------------------------------------
+      - alert: ChenCircuitBreakerOpen
+        expr: chen_circuit_state{state="open"} == 1
+        for: 1m
+        labels:
+          severity: critical
+          team: chen-oncall
+        annotations:
+          summary: "CHEN circuit breaker open for {{ $labels.name }}"
+          description: "Backend {{ $labels.name }} is failing. Circuit breaker is open — requests are being rejected."
+
+      # ---------------------------------------------------------------------------
+      # Rate limiting alerts
+      # ---------------------------------------------------------------------------
+      - alert: ChenRateLimitHigh
+        expr: |
+          sum(rate(chen_requests_total{status="429"}[5m]))
+            / sum(rate(chen_requests_total[5m])) > 0.10
+        for: 5m
+        labels:
+          severity: info
+          team: chen-oncall
+        annotations:
+          summary: "CHEN rate limiting > 10% of requests"
+          description: "Many clients are being rate-limited. Consider raising limits or scaling."

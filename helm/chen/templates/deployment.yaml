@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/name: chen
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: chen
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: chen
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: chen
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.chen.port }}
+              protocol: TCP
+          env:
+            - name: CHEN_DEFAULT_BACKEND
+              value: {{ .Values.chen.backend | quote }}
+            - name: CHEN_LOG_LEVEL
+              value: {{ .Values.chen.logLevel | quote }}
+            - name: CHEN_LOG_JSON
+              value: {{ .Values.chen.logJson | quote }}
+            - name: CHEN_CORS_ORIGINS
+              value: {{ .Values.chen.corsOrigins | quote }}
+            - name: CHEN_RATE_LIMIT_PER_MINUTE
+              value: {{ .Values.chen.rateLimitPerMinute | quote }}
+            - name: CHEN_RUN_STORE_BACKEND
+              value: {{ .Values.chen.runStoreBackend | quote }}
+            - name: CHEN_RUN_STORE_PATH
+              value: /data/runs.sqlite3
+            - name: CHEN_SECURITY_HARDENED
+              value: {{ .Values.chen.securityHardened | quote }}
+            - name: CHEN_TRACING_ENABLED
+              value: {{ .Values.chen.tracingEnabled | quote }}
+            - name: CHEN_TRACING_EXPORTER
+              value: {{ .Values.chen.tracingExporter | quote }}
+            - name: CHEN_TRACING_ENDPOINT
+              value: {{ .Values.chen.tracingEndpoint | quote }}
+            - name: CHEN_CARBON_AWARE
+              value: {{ .Values.chen.carbonAware | quote }}
+            - name: CHEN_DEFAULT_ZONE
+              value: {{ .Values.chen.defaultZone | quote }}
+            {{- if .Values.hf.token }}
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "chen.fullname" . }}-hf
+                  key: token
+            {{- end }}
+            {{- if eq .Values.chen.backend "hf" }}
+            - name: CHEN_HF_ANALYST_MODEL
+              value: {{ .Values.hf.analystModel | quote }}
+            - name: CHEN_HF_REASONER_MODEL
+              value: {{ .Values.hf.reasonerModel | quote }}
+            - name: CHEN_HF_CODER_MODEL
+              value: {{ .Values.hf.coderModel | quote }}
+            - name: CHEN_HF_SYNTHESIZER_MODEL
+              value: {{ .Values.hf.synthesizerModel | quote }}
+            - name: CHEN_HF_DEVICE
+              value: {{ .Values.hf.device | quote }}
+            {{- end }}
+            {{- if .Values.postgres.enabled }}
+            - name: CHEN_RUN_STORE_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.existingSecret | default (printf "%s-postgres" (include "chen.fullname" .)) }}
+                  key: {{ .Values.postgres.secretKey | default "dsn" }}
+            {{- end }}
+            {{- if .Values.auth.enabled }}
+            - name: CHEN_API_KEYS_FILE
+              value: /secrets/api_keys.json
+            {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.gpu.enabled }}
+          resources:
+            limits:
+              {{ .Values.gpu.type }}: {{ .Values.gpu.count }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            {{- if .Values.auth.enabled }}
+            - name: api-keys
+              mountPath: /secrets
+              readOnly: true
+            {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "chen.fullname" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.auth.enabled }}
+        - name: api-keys
+          secret:
+            secretName: {{ .Values.auth.existingSecret | default (printf "%s-api-keys" (include "chen.fullname" .)) }}
+        {{- end }}

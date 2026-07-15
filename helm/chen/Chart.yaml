@@ -1,0 +1,20 @@
+apiVersion: v2
+name: chen
+description: CHEN — Collaborative Heterogeneous Expert Network. Distributed LLM inference with sustainability-first design.
+type: application
+version: 0.4.0
+appVersion: "0.4.0"
+home: https://github.com/your-org/chen
+sources:
+  - https://github.com/your-org/chen
+maintainers:
+  - name: CHEN Maintainers
+    url: https://github.com/your-org/chen
+keywords:
+  - llm
+  - inference
+  - distributed
+  - mixture-of-experts
+  - sustainability
+  - ai
+icon: https://raw.githubusercontent.com/your-org/chen/main/docs/assets/logo.png

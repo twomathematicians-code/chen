@@ -47,12 +47,16 @@ CREATE TABLE IF NOT EXISTS runs (
     total_cost_usd    REAL NOT NULL,
     total_latency_ms  REAL NOT NULL,
     epu               REAL,
-    kv_transfers      INTEGER
+    kv_transfers      INTEGER,
+    trace_id          TEXT,
+    tenant_id         TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_runs_timestamp ON runs(timestamp);
 CREATE INDEX IF NOT EXISTS idx_runs_config_hash ON runs(config_hash);
 CREATE INDEX IF NOT EXISTS idx_runs_phase ON runs(phase);
+CREATE INDEX IF NOT EXISTS idx_runs_trace_id ON runs(trace_id) WHERE trace_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_runs_tenant ON runs(tenant_id) WHERE tenant_id IS NOT NULL;
 """
 
 
@@ -74,6 +78,8 @@ class RunRecord:
     epu: float = 0.0
     kv_transfers: int = 0
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    trace_id: str = ""
+    tenant_id: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -97,6 +103,8 @@ class RunRecord:
             total_latency_ms=row["total_latency_ms"],
             epu=row["epu"] if row["epu"] is not None else 0.0,
             kv_transfers=row["kv_transfers"] if row["kv_transfers"] is not None else 0,
+            trace_id=row["trace_id"] if "trace_id" in row.keys() and row["trace_id"] else "",
+            tenant_id=row["tenant_id"] if "tenant_id" in row.keys() and row["tenant_id"] else "",
         )
 
 
@@ -110,6 +118,23 @@ class RunStore:
         self._conn = sqlite3.connect(str(self.path), check_same_thread=False, isolation_level=None)
         self._conn.row_factory = sqlite3.Row
         self._conn.executescript(_SCHEMA)
+        # Run lightweight migrations for existing databases (add columns
+        # that were introduced in later versions).
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Add columns that were introduced after the initial schema.
+
+        Uses ``PRAGMA table_info`` to check existing columns and only
+        adds missing ones. This is a simple migration strategy that
+        works for additive schema changes.
+        """
+        with self._lock:
+            cols = {row[1] for row in self._conn.execute("PRAGMA table_info(runs)").fetchall()}
+            if "trace_id" not in cols:
+                self._conn.execute("ALTER TABLE runs ADD COLUMN trace_id TEXT")
+            if "tenant_id" not in cols:
+                self._conn.execute("ALTER TABLE runs ADD COLUMN tenant_id TEXT")
 
     @classmethod
     def default(cls) -> RunStore:
@@ -126,11 +151,12 @@ class RunStore:
                 INSERT OR REPLACE INTO runs
                 (run_id, config_hash, timestamp, prompt, output, phase, backend,
                  router, selected_experts, total_tokens, total_cost_usd,
-                 total_latency_ms, epu, kv_transfers)
+                 total_latency_ms, epu, kv_transfers, trace_id, tenant_id)
                 VALUES
                 (:run_id, :config_hash, :timestamp, :prompt, :output, :phase,
                  :backend, :router, :selected_experts, :total_tokens,
-                 :total_cost_usd, :total_latency_ms, :epu, :kv_transfers)
+                 :total_cost_usd, :total_latency_ms, :epu, :kv_transfers,
+                 :trace_id, :tenant_id)
                 """,
                 d,
             )
