@@ -34,7 +34,7 @@ COPY src/ ./src/
 
 # Install with server + dev extras (no hf — too large for default image)
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -e ".[server,dev]"
+    && pip install --no-cache-dir ".[server,dev]"
 
 # ---------- Stage 2: runtime ----------
 FROM python:3.11-slim AS runtime
