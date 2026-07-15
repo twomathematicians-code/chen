@@ -53,6 +53,18 @@
          <lastmod>2026-07-15</lastmod>
     </url>
     <url>
+         <loc>https://your-org.github.io/chen/adrs/0009-api-key-auth-rbac/</loc>
+         <lastmod>2026-07-15</lastmod>
+    </url>
+    <url>
+         <loc>https://your-org.github.io/chen/adrs/0010-postgres-run-store/</loc>
+         <lastmod>2026-07-15</lastmod>
+    </url>
+    <url>
+         <loc>https://your-org.github.io/chen/adrs/0011-sse-streaming/</loc>
+         <lastmod>2026-07-15</lastmod>
+    </url>
+    <url>
          <loc>https://your-org.github.io/chen/architecture/overview/</loc>
          <lastmod>2026-07-15</lastmod>
     </url>
