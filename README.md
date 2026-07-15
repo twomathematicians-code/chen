@@ -1,6 +1,6 @@
 # CHEN — Collaborative Heterogeneous Expert Network
 
-> Replace one giant model with a coordinated *garage* of small, specialized models — pass **latent memory** between them instead of plain text — and cut the carbon footprint of LLM inference by up to **89%**.
+> The cluster of Sm_LLM performs cobine unbounded parameter functionality and working with Inf_LLM model (Dimention Expansion) — pass **latent memory** between them instead of plain text — and cut the carbon footprint of LLM inference by up to **89%**.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/your-org/chen/ci.yml?branch=main&label=CI&logo=github)](.github/workflows/ci.yml)
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](LICENSE)
