@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -66,7 +67,13 @@ class InferResponse(BaseModel):
     total_latency_ms: float
     epu: float
     kv_transfers: int
-    run_id: str | None = None
+    # NOTE: Use Optional[str], not `str | None`. Pydantic evaluates type
+    # annotations at runtime via eval(), and `str | None` (PEP 604) is a
+    # SyntaxError on Python 3.9. `from __future__ import annotations` does
+    # not help because Pydantic resolves the string annotation at class
+    # definition time. The eval_type_backport package is installed as a
+    # safety net, but Optional[str] is the correct, portable fix.
+    run_id: Optional[str] = None  # noqa: UP045
     config_hash: str
 
 

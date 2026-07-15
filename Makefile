@@ -31,7 +31,9 @@ test: ## Run the full test suite
         pytest
 
 test-fast: ## Run only fast tests (skip slow / gpu / integration / benchmarks)
-        pytest -m "not slow and not gpu and not integration" --ignore=tests/benchmarks
+        pytest -m "not slow and not gpu and not integration" \
+                --ignore=tests/integration \
+                --ignore=tests/benchmarks
 
 test-cov: ## Run tests with coverage report
         pytest --cov=chen --cov-report=term --cov-report=html
