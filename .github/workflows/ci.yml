@@ -67,6 +67,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,server]"
       - name: Run tests (fast only)
+        shell: bash
         run: |
           pytest -m "not slow and not gpu and not integration" \
             --ignore=tests/integration \
@@ -99,6 +100,7 @@ jobs:
       - name: Run Phase 3 example
         run: python examples/run_phase3.py --router logistic
       - name: Run benchmarks example
+        shell: bash
         run: python examples/run_benchmarks.py --phase 1 || true  # exit code 1 if targets not met
       - name: Run CLI info command
         run: chen info
@@ -169,6 +171,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Smoke test the image
+        shell: bash
         run: |
           docker run --rm chen:ci info
           docker run --rm chen:ci run --prompt "Explain recursion." --phase 1 --backend mock

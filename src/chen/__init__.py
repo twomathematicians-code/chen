@@ -60,6 +60,23 @@ from chen.phases.phase2_kv_pass import KVPassPipeline
 from chen.phases.phase3_routing import RoutingPipeline
 from chen.reproducibility import RunContext, hash_config, seed_everything, track_run
 
+# Security & encryption (graceful import — cryptography is a core dep).
+try:
+    from chen.security import (
+        CrypticStream,
+        CryptoError,
+        Decryptor,
+        EncryptedBackend,
+        EncryptionConfig,
+        Encryptor,
+        KeyStore,
+        SecuritySettings,
+    )
+
+    _SECURITY_AVAILABLE = True
+except ImportError:
+    _SECURITY_AVAILABLE = False
+
 __version__ = "0.2.0"
 
 __all__ = [
@@ -111,6 +128,15 @@ __all__ = [
     "seed_everything",
     "track_run",
     "RunContext",
+    # Security & Encryption
+    "CrypticStream",
+    "CryptoError",
+    "EncryptedBackend",
+    "EncryptionConfig",
+    "Encryptor",
+    "Decryptor",
+    "KeyStore",
+    "SecuritySettings",
     # Meta
     "__version__",
 ]

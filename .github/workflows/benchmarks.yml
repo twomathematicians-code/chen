@@ -37,6 +37,7 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run benchmarks
+        shell: bash
         run: |
           pytest tests/benchmarks/ --benchmark-only \
             --benchmark-min-rounds=10 \

@@ -17,6 +17,7 @@ from rich.console import Console
 from chen import __version__
 from chen.cli.commands.bench import bench_command
 from chen.cli.commands.info import info_command
+from chen.cli.commands.keys import keys_app
 from chen.cli.commands.run import run_command
 from chen.cli.commands.serve import serve_command
 
@@ -103,6 +104,10 @@ def serve(
 ) -> None:
     """Start the CHEN HTTP API server."""
     serve_command(host=host, port=port, backend=backend, reload=reload)
+
+
+# Add the keys sub-app as a command group
+app.add_typer(keys_app(), name="keys", help="Manage encryption keys.")
 
 
 if __name__ == "__main__":
