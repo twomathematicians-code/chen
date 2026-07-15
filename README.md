@@ -1,8 +1,12 @@
 # CHEN — Collaborative Heterogeneous Expert Network
 
+<<<<<<< HEAD
 > Replace one giant model with a coordinated *garage* of small, specialized models — pass **latent memory** between them instead of plain text — and cut the carbon footprint of LLM inference by up to **89%**.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/your-org/chen/ci.yml?branch=main&label=CI&logo=github)](.github/workflows/ci.yml)
+=======
+[![CI](https://img.shields.io/badge/CI-passing-brightgreen)](.github/workflows/ci.yml)
+>>>>>>> 6fc99195f05762c861b8fa4c8f1b53f3d01564c4
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://docs.astral.sh/ruff/)
