@@ -139,6 +139,10 @@ nav:
       - 0005 - Logistic router default: adrs/0005-logistic-router-default.md
       - 0006 - SQLite run store: adrs/0006-sqlite-run-store.md
       - 0007 - CC0 license: adrs/0007-cc0-license.md
+      - 0008 - Encryption at boundary: adrs/0008-encryption-at-boundary.md
+      - 0009 - API key auth + RBAC: adrs/0009-api-key-auth-rbac.md
+      - 0010 - PostgreSQL run store: adrs/0010-postgres-run-store.md
+      - 0011 - SSE streaming: adrs/0011-sse-streaming.md
   - Operations:
       - Overview: operations/README.md
       - Deployment: operations/deployment.md

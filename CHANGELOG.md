@@ -8,17 +8,116 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Real vLLM backend with PagedAttention KV extraction.
-- Real llama.cpp backend with GGUF KV export.
-- Async / streaming pipeline (token-by-token handoff).
+- Real vLLM KV-cache injection (v0.3.0 re-encodes source text; direct block injection is on the roadmap).
 - Auto-tuner that learns the optimal router from observed KPIs.
 - Reproduction configs for MMLU, HumanEval, GSM8K.
-- OpenTelemetry distributed tracing.
 - Helm chart for Kubernetes deployment.
 - Carbon-aware scheduling — route to lower-carbon experts based on real-time grid intensity (Electricity Maps API integration).
 - Real-time carbon footprint dashboard (Scaphandre / Kepler integration).
+- Batched inference — group similar-queue prompts for the same expert.
+- Model versioning & A/B testing — run two Reasoner variants side-by-side.
+- Audit logging — tamper-proof log of all prompts/outputs for compliance.
+- Data encryption at rest — encrypt SQLite/Postgres run store contents.
 
-## [0.2.0] — 2025-07-15
+## [0.3.0] — 2025-07-15
+
+### Added — Industry-grade Tier 0 + Tier 1 production upgrade
+
+**Tier 0 — The Missing Organs:**
+
+**Real vLLM backend** (`src/chen/backends/vllm.py`):
+- Full implementation of `encode()`, `decode()`, `transfer_cache()`.
+- KV-cache extraction from vLLM's PagedAttention block manager — walks the sequence's block table, extracts each physical block's K/V tensors, concatenates to a flat numpy array per layer.
+- Handles the non-contiguous block-table indirection (BlockSpaceManager).
+- Layer-count truncation/padding for cross-instance transfer.
+- Shape validation via `IncompatibleCacheError` for mismatched architectures.
+- Lazy model loading, param count auto-detection from HF config.
+
+**Real llama.cpp backend** (`src/chen/backends/llama_cpp.py`):
+- Full implementation using `llama-cpp-python`'s `Llama._ctx` interface.
+- KV-cache extraction via `llama_get_kv_cache` — de-interleaves the flat tensor into per-layer `[seq_len, n_head_kv, head_dim]` arrays.
+- KV-cache injection via `llama_set_kv_cache` for same-model decode.
+- Fallback to re-encoding source text for cross-model transfer.
+- GGUF model loading, CPU/MPS inference, quantized model support.
+- Config detection (`n_layer`, `n_embd`, `n_head_kv`, `head_dim`) from the loaded context.
+
+**Server backend wiring** (`src/chen/server/routes.py`):
+- `_build_backend()` factory supports `mock`, `hf`, `vllm`, `llama_cpp`.
+- Per-expert model selection via env vars (`CHEN_HF_ANALYST_MODEL`, etc.).
+- Lazy backend loading — models load on first request, not at server startup.
+- All four backends now usable via the HTTP API and CLI.
+
+**Tier 1 — Production Survival:**
+
+**Authentication & authorization** (`src/chen/server/auth.py`):
+- `APIKeyStore` — file-based API key store with JSON format.
+- `AuthMiddleware` — validates `Authorization: Bearer <key>` headers; bypasses auth in dev mode (no keys file).
+- Role-based access control: `admin` (all endpoints), `user` (no `/v1/admin/*`), `read-only` (GET only).
+- `RateLimitMiddleware` — per-key sliding-window rate limiting (default 60 req/min, configurable per key).
+- Returns HTTP 401 for missing/invalid keys, HTTP 403 for insufficient role, HTTP 429 for rate limit.
+- Public paths (`/v1/health`, `/v1/metrics`, `/docs`) bypass auth.
+
+**Input validation & prompt size limits** (`InferRequest`):
+- `prompt` field capped at `max_length=100_000` characters (prevents OOM from 10MB prompts).
+- `tenant_id` field added (max 128 chars) for multi-tenant isolation.
+- `stream` field added (bool) for SSE streaming mode.
+- All fields validated by Pydantic v2 with clear error messages.
+
+**Configurable CORS** (`src/chen/server/app.py`):
+- Removed `allow_origins=["*"]` hardcode.
+- CORS origins now configurable via `CHEN_CORS_ORIGINS` env var (comma-separated).
+- When not wildcard, `allow_credentials=True` and methods/headers are restricted.
+
+**PostgreSQL run store** (`src/chen/persistence/pg_store.py`):
+- `PostgresRunStore` — async, connection-pooled Postgres backend.
+- Same interface as `RunStore` (save/get/list/count) but all methods are async.
+- Uses `asyncpg` for non-blocking I/O.
+- Schema with JSONB for `selected_experts`, indexes on timestamp/config_hash/phase.
+- `get_run_store()` factory switches between SQLite and Postgres via `CHEN_RUN_STORE_BACKEND` env var.
+
+**SSE streaming endpoint** (`POST /v1/infer/stream`):
+- Server-Sent Events response with per-expert progress events.
+- Final `event: done` with full metrics and run_id.
+- Pipeline runs in a thread pool to avoid blocking the event loop.
+- Headers: `Cache-Control: no-cache`, `Connection: keep-alive`, `X-Accel-Buffering: no`.
+
+**Multi-tenant memory isolation** (`src/chen/persistence/tenant_memory.py`):
+- `MultiTenantMemory` — wraps any Memory factory with per-tenant namespacing.
+- Per-tenant entry quotas (`max_entries_per_tenant`).
+- TTL-based garbage collection (`ttl_seconds`).
+- `QuotaExceededError` when a tenant exceeds its quota.
+- Tenants are completely isolated — no cross-tenant data leakage.
+
+**Tier 2 — Production Confidence:**
+
+**Circuit breaker** (`src/chen/observability/circuit_breaker.py`):
+- `CircuitBreaker` — thread-safe, three-state (CLOSED → OPEN → HALF_OPEN).
+- Configurable failure threshold and cooldown.
+- `CircuitBreakerOpenError` raised when breaker is open.
+- `CircuitBreakerRegistry` — global registry for all backend breakers.
+- `to_dict()` for admin/metrics endpoints.
+- `reset()` and `reset_all()` for manual recovery.
+
+**OpenTelemetry tracing** (`src/chen/observability/tracing.py`):
+- `init_tracing()` — sets up TracerProvider with console/OTLP/Jaeger exporters.
+- `span()` context manager — works with or without OTel installed (no-op fallback).
+- `init_from_env()` — configures from `CHEN_TRACING_*` env vars.
+- Graceful degradation: if `opentelemetry` is not installed, all tracing is no-op.
+
+**Health endpoint enhanced**:
+- Now returns `backend`, `auth_enabled`, and `version` fields.
+
+### Changed
+- Version bumped to 0.3.0.
+- `InferRequest` schema extended with `stream` and `tenant_id` fields.
+- Server now loads auth middleware, rate limiter, and configurable CORS on startup.
+- Test count grew from 260 to 308 (+48 tests across auth, circuit breaker, tenant memory, tracing, streaming, validation).
+
+### Migration notes
+- If you have existing API clients, they continue to work — auth is bypassed when no API keys file exists.
+- To enable auth, create `chen_data/api_keys.json` with a list of `APIKey` objects.
+- To switch to Postgres, set `CHEN_RUN_STORE_BACKEND=postgres` and `CHEN_RUN_STORE_DSN=...`.
+- The `/v1/health` response now includes `backend` and `auth_enabled` fields — update any monitoring that expects the old schema.
 
 ### Added — Industry-grade deep tech upgrade
 

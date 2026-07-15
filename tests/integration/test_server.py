@@ -36,6 +36,8 @@ class TestHealthEndpoint:
         body = r.json()
         assert body["status"] == "ok"
         assert body["version"] == __version__
+        assert "backend" in body
+        assert "auth_enabled" in body
 
     def test_metrics_returns_text(self, client):
         r = client.get("/v1/metrics")
@@ -103,6 +105,36 @@ class TestInferEndpoint:
     def test_infer_validates_prompt_min_length(self, client):
         r = client.post("/v1/infer", json={"prompt": "", "phase": 1})
         assert r.status_code == 422  # Pydantic validation error
+
+    def test_infer_validates_prompt_max_length(self, client):
+        # 100K+ char prompt should be rejected
+        r = client.post(
+            "/v1/infer",
+            json={"prompt": "x" * 100_001, "phase": 1},
+        )
+        assert r.status_code == 422
+
+    def test_infer_stream_endpoint(self, client):
+        """Test the SSE streaming endpoint."""
+        with client.stream(
+            "POST",
+            "/v1/infer/stream",
+            json={
+                "prompt": "Explain recursion.",
+                "phase": 1,
+                "backend": "mock",
+                "max_tokens": 32,
+            },
+        ) as r:
+            assert r.status_code == 200
+            assert "text/event-stream" in r.headers.get("content-type", "")
+            body = b""
+            for chunk in r.iter_bytes():
+                body += chunk
+            text = body.decode("utf-8")
+            # Should contain SSE events
+            assert "data:" in text
+            assert "event: done" in text
 
     def test_infer_validates_phase_range(self, client):
         r = client.post("/v1/infer", json={"prompt": "x", "phase": 5})

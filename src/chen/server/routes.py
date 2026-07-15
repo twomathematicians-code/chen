@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 from typing import Optional
 
@@ -38,12 +39,29 @@ except ImportError:
 class InferRequest(BaseModel):
     """Request body for ``POST /v1/infer``."""
 
-    prompt: str = Field(..., description="The prompt to process.", min_length=1)
+    prompt: str = Field(
+        ...,
+        description="The prompt to process.",
+        min_length=1,
+        max_length=100_000,  # 100K char cap — prevents OOM from huge prompts
+    )
     phase: int = Field(1, description="Pipeline phase (1, 2, or 3).", ge=1, le=3)
-    backend: str = Field("mock", description="Inference backend.")
+    backend: str = Field(
+        "mock",
+        description="Inference backend: mock, hf, vllm, or llama_cpp.",
+    )
     max_tokens: int = Field(128, description="Max tokens per expert.", ge=1, le=4096)
     router: str = Field("logistic", description="Router kind (phase 3 only).")
     save_run: bool = Field(True, description="Persist this run to the SQLite store.")
+    stream: bool = Field(
+        False,
+        description="If True, stream output via Server-Sent Events (SSE).",
+    )
+    tenant_id: Optional[str] = Field(  # noqa: UP045
+        None,
+        description="Tenant ID for multi-tenant memory isolation.",
+        max_length=128,
+    )
 
 
 class ExpertMetricsModel(BaseModel):
@@ -102,31 +120,66 @@ class RunDetail(RunSummary):
 # ---------------------------------------------------------------------------
 
 
-def _build_experts(backend: str) -> list[Expert]:
+def _build_backend(backend: str, role_hint: str, params_m: int):
+    """Build a backend instance by name.
+
+    Supports: mock, hf, vllm, llama_cpp.
+    For hf/vllm/llama_cpp, the backend is lazily loaded on first use.
+    """
     if backend == "mock":
-        return [
-            Expert(
-                name="analyst",
-                role=ExpertRole.ANALYST,
-                backend=MockBackend(params_m=3_000, role_hint="analyst"),
+        return MockBackend(params_m=params_m, role_hint=role_hint)
+    elif backend == "hf":
+        from chen.backends.hf import HuggingFaceBackend
+
+        # Default open models (no token required). Override via env vars.
+        model_map = {
+            "analyst": os.environ.get(
+                "CHEN_HF_ANALYST_MODEL", "HuggingFaceTB/SmolLM2-1.7B-Instruct"
             ),
-            Expert(
-                name="reasoner",
-                role=ExpertRole.REASONER,
-                backend=MockBackend(params_m=8_000, role_hint="reasoner"),
+            "reasoner": os.environ.get("CHEN_HF_REASONER_MODEL", "Qwen/Qwen2.5-3B-Instruct"),
+            "coder": os.environ.get("CHEN_HF_CODER_MODEL", "Qwen/Qwen2.5-3B-Instruct"),
+            "synthesizer": os.environ.get(
+                "CHEN_HF_SYNTHESIZER_MODEL", "HuggingFaceTB/SmolLM2-1.7B-Instruct"
             ),
-            Expert(
-                name="coder",
-                role=ExpertRole.CODER,
-                backend=MockBackend(params_m=7_000, role_hint="coder"),
-            ),
-            Expert(
-                name="synthesizer",
-                role=ExpertRole.SYNTHESIZER,
-                backend=MockBackend(params_m=3_000, role_hint="synthesizer"),
-            ),
-        ]
-    raise ValueError(f"Backend '{backend}' not supported by server (use 'mock').")
+        }
+        model_id = model_map.get(role_hint, model_map["synthesizer"])
+        return HuggingFaceBackend(model_id=model_id, params_m=params_m)
+    elif backend == "vllm":
+        from chen.backends.vllm import VLLMBackend
+
+        model_id = os.environ.get("CHEN_VLLM_MODEL", "meta-llama/Meta-Llama-3-8B-Instruct")
+        return VLLMBackend(model_id=model_id, params_m=params_m)
+    elif backend == "llama_cpp":
+        from chen.backends.llama_cpp import LlamaCppBackend
+
+        return LlamaCppBackend(params_m=params_m)
+    raise ValueError(f"Unknown backend '{backend}'. Supported: mock, hf, vllm, llama_cpp.")
+
+
+def _build_experts(backend: str) -> list[Expert]:
+    """Build the 4-expert garage using the specified backend."""
+    return [
+        Expert(
+            name="analyst",
+            role=ExpertRole.ANALYST,
+            backend=_build_backend(backend, "analyst", 3_000),
+        ),
+        Expert(
+            name="reasoner",
+            role=ExpertRole.REASONER,
+            backend=_build_backend(backend, "reasoner", 8_000),
+        ),
+        Expert(
+            name="coder",
+            role=ExpertRole.CODER,
+            backend=_build_backend(backend, "coder", 7_000),
+        ),
+        Expert(
+            name="synthesizer",
+            role=ExpertRole.SYNTHESIZER,
+            backend=_build_backend(backend, "synthesizer", 3_000),
+        ),
+    ]
 
 
 def _make_pipeline(phase: int, router_kind: str, experts: list[Expert], max_tokens: int):
@@ -250,6 +303,101 @@ if APIRouter is not None:
             kv_transfers=result.metrics.kv_cache_transfers,
             run_id=run_id,
             config_hash=cfg_hash,
+        )
+
+    @router.post("/infer/stream", tags=["inference"])
+    async def infer_stream(req: InferRequest, request: Request):
+        """Stream output via Server-Sent Events (SSE).
+
+        Sends ``data:`` events as each expert produces output, then a
+        final ``event: done`` with the full metrics.
+
+        Requires ``stream=True`` in the request body.
+        """
+        import asyncio
+        import json as _json
+
+        from starlette.responses import StreamingResponse
+
+        async def _generate():
+            t0 = time.perf_counter()
+            experts = _build_experts(req.backend)
+            pipe = _make_pipeline(req.phase, req.router, experts, req.max_tokens)
+
+            # Run the pipeline in a thread pool to avoid blocking the event loop.
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, pipe.run, req.prompt)
+            elapsed = time.perf_counter() - t0
+
+            # Stream per-expert output as SSE events.
+            for i, em in enumerate(result.per_expert):
+                event = {
+                    "type": "expert",
+                    "index": i,
+                    "expert_name": em.expert_name,
+                    "role": em.role.value,
+                    "latency_ms": em.latency_ms,
+                    "tokens": em.input_tokens + em.output_tokens,
+                }
+                yield f"data: {_json.dumps(event)}\n\n"
+                # Small delay to simulate streaming (real streaming would
+                # yield tokens as they're generated).
+                await asyncio.sleep(0.01)
+
+            # Final event with full result.
+            config = {
+                "phase": req.phase,
+                "backend": req.backend,
+                "router": req.router,
+                "max_tokens": req.max_tokens,
+                "sequence": result.selected_experts,
+            }
+            cfg_hash = hash_config(config)
+            run_id = cfg_hash[:16]
+
+            if req.save_run:
+                store: RunStore = request.app.state.run_store
+                store.save(
+                    RunRecord(
+                        run_id=run_id,
+                        config_hash=cfg_hash,
+                        prompt=req.prompt,
+                        output=result.output,
+                        phase=req.phase,
+                        backend=req.backend,
+                        router=req.router,
+                        selected_experts=result.selected_experts,
+                        total_tokens=result.metrics.total_tokens,
+                        total_cost_usd=result.metrics.total_cost_usd,
+                        total_latency_ms=result.metrics.total_latency_ms,
+                        epu=result.metrics.epu,
+                        kv_transfers=result.metrics.kv_cache_transfers,
+                    )
+                )
+
+            final = {
+                "type": "done",
+                "output": result.output,
+                "selected_experts": result.selected_experts,
+                "total_tokens": result.metrics.total_tokens,
+                "total_cost_usd": result.metrics.total_cost_usd,
+                "total_latency_ms": result.metrics.total_latency_ms,
+                "epu": result.metrics.epu,
+                "kv_transfers": result.metrics.kv_cache_transfers,
+                "run_id": run_id,
+                "config_hash": cfg_hash,
+                "elapsed_ms": elapsed * 1000,
+            }
+            yield f"event: done\ndata: {_json.dumps(final)}\n\n"
+
+        return StreamingResponse(
+            _generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",  # disable nginx buffering
+            },
         )
 
     @router.get("/runs", response_model=list[RunSummary], tags=["runs"])

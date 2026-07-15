@@ -13,7 +13,7 @@ CHEN is pre-1.0 software. We will patch security issues only on the latest relea
 
 If you discover a security vulnerability in CHEN, please report it **privately** — do not open a public GitHub issue.
 
-Email: **twomathematicians@gmail.com** (replace with your real address before publishing).
+Email: **security@chen-arch.example** (replace with your real address before publishing).
 
 Please include:
 
