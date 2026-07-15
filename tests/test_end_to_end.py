@@ -153,7 +153,7 @@ class TestPublicAPI:
         assert hasattr(chen, "MockBackend")
         assert hasattr(chen, "get_backend")
         assert hasattr(chen, "register_backend")
-        assert chen.__version__ == "0.1.0"
+        assert chen.__version__ == "0.2.0"
 
     def test_backends_subpackage_imports(self):
         from chen.backends import (

@@ -1,0 +1,69 @@
+# CHEN — pre-commit hooks
+#
+# Install once:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Run manually on all files:
+#   pre-commit run --all-files
+#
+# Hooks run automatically on `git commit`. They are also enforced in CI
+# via the GitHub Actions workflow.
+
+repos:
+  # Code formatting + linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  # Type checking (non-blocking — run `make typecheck` for strict mode)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - types-PyYAML
+          - pydantic>=2.0
+        args: [--ignore-missing-imports, --no-strict-optional]
+        files: ^src/chen/
+        pass_filenames: false
+
+  # General hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]  # 1 MB — flag anything bigger
+      - id: detect-private-key
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Security: scan for secrets and known-vulnerable dependencies
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: package.lock|package.json
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        args: [-l, -r, src/chen/]
+        additional_dependencies: ["bandit[toml]"]
+
+# Configuration for individual hooks
+ci:
+  skip: [mypy, bandit]  # CI runs these via the workflow directly

@@ -53,11 +53,14 @@ from chen.core.router import (
     Router,
     RouterDecision,
 )
+from chen.observability.logging import configure_logging, get_logger
+from chen.persistence.run_store import RunRecord, RunStore
 from chen.phases.phase1_cascade import CascadePipeline
 from chen.phases.phase2_kv_pass import KVPassPipeline
 from chen.phases.phase3_routing import RoutingPipeline
+from chen.reproducibility import RunContext, hash_config, seed_everything, track_run
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     # Core
@@ -97,6 +100,17 @@ __all__ = [
     "BenchmarkRunner",
     "BenchmarkTask",
     "TASK_REGISTRY",
+    # Observability
+    "configure_logging",
+    "get_logger",
+    # Persistence
+    "RunRecord",
+    "RunStore",
+    # Reproducibility
+    "hash_config",
+    "seed_everything",
+    "track_run",
+    "RunContext",
     # Meta
     "__version__",
 ]

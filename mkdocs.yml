@@ -1,0 +1,150 @@
+# CHEN — MkDocs Material configuration
+#
+# Build and serve locally:
+#   pip install -e ".[dev]"
+#   mkdocs serve
+#
+# Build for production:
+#   mkdocs build
+# Output is in site/.
+
+site_name: CHEN — Collaborative Heterogeneous Expert Network
+site_description: >-
+  Distributed inference architecture that replaces a single monolithic
+  model with a coordinated garage of specialized, low-parameter models.
+site_url: https://your-org.github.io/chen/
+repo_url: https://github.com/your-org/chen
+repo_name: your-org/chen
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    logo: material/console-network
+  favicon: assets/favicon.png
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_source: true
+            show_signature_annotations: true
+            separate_signature: true
+            show_root_heading: true
+            heading_level: 2
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.twemoji
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+
+extra_css:
+  - assets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/your-org/chen
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/chen-arch/
+  version:
+    provider: mike
+
+nav:
+  - Home: README.md
+  - Architecture:
+      - Overview: architecture/overview.md
+  - Math:
+      - Specifications: math/specifications.md
+  - ADRs:
+      - Index: adrs/README.md
+      - 0001 - External MoE: adrs/0001-external-moe-vs-internal-moe.md
+      - 0002 - KV-cache protocol: adrs/0002-kv-cache-transfer-protocol.md
+      - 0003 - Backend abstraction: adrs/0003-pluggable-backend-abstraction.md
+      - 0004 - Mock backend first: adrs/0004-mock-backend-first.md
+      - 0005 - Logistic router default: adrs/0005-logistic-router-default.md
+      - 0006 - SQLite run store: adrs/0006-sqlite-run-store.md
+      - 0007 - CC0 license: adrs/0007-cc0-license.md
+  - Operations:
+      - Overview: operations/README.md
+      - Deployment: operations/deployment.md
+      - Observability: operations/observability.md
+      - Runbooks:
+          - Incident response: operations/runbooks/incident-response.md
+          - Performance debugging: operations/runbooks/performance-debugging.md
+  - Security:
+      - Threat model: security/threat-model.md
+  - Governance: governance.md

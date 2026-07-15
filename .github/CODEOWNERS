@@ -1,0 +1,40 @@
+# CHEN — CODEOWNERS
+#
+# Each line: <pattern>  <owner(s)>
+# When a PR touches a file matching <pattern>, GitHub auto-requests
+# review from <owner(s)>.
+#
+# Replace @your-org/chen-maintainers with your actual team or username.
+
+# Default owner for everything not matched below
+*                           @your-org/chen-maintainers
+
+# Core architecture — needs maintainer review
+/src/chen/core/             @your-org/chen-maintainers
+/src/chen/phases/           @your-org/chen-maintainers
+/src/chen/backends/         @your-org/chen-maintainers
+
+# Backend-specific owners (add GitHub usernames here)
+/src/chen/backends/hf.py    @your-org/chen-maintainers
+/src/chen/backends/vllm.py  @your-org/chen-maintainers
+/src/chen/backends/llama_cpp.py @your-org/chen-maintainers
+
+# HTTP server & API surface
+/src/chen/server/           @your-org/chen-maintainers
+/src/chen/cli/              @your-org/chen-maintainers
+
+# Security-sensitive areas
+/SECURITY.md                @your-org/chen-maintainers
+/docs/security/             @your-org/chen-maintainers
+/.github/workflows/         @your-org/chen-maintainers
+
+# Documentation
+/docs/                      @your-org/chen-docs
+/README.md                  @your-org/chen-docs
+/ARCHITECTURE.md            @your-org/chen-docs
+
+# CI / build config
+/pyproject.toml             @your-org/chen-maintainers
+/Makefile                   @your-org/chen-maintainers
+/Dockerfile                 @your-org/chen-maintainers
+/.pre-commit-config.yaml    @your-org/chen-maintainers

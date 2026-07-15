@@ -1,0 +1,67 @@
+# CHEN — .dockerignore
+# Build context is sent to the Docker daemon on every build. Excluding
+# large or irrelevant files speeds up builds significantly.
+
+# Version control
+.git
+.gitignore
+.github
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project data
+chen_data/
+*.sqlite3
+*.db
+models/
+*.gguf
+*.bin
+*.safetensors
+*.pt
+*.pth
+
+# Docs (built separately, not needed in image)
+docs/_build/
+site/
+notebooks/.ipynb_checkpoints/
+
+# Local env files
+.env
+.env.local
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

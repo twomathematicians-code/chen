@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chen-arch"
-version = "0.1.0"
+version = "0.2.0"
 description = "Collaborative Heterogeneous Expert Network - distributed inference via coordinated small models"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -36,8 +36,13 @@ classifiers = [
 dependencies = [
     "numpy>=1.22",
     "pydantic>=2.0",
+    "pydantic-settings>=2.0",
     "tiktoken>=0.5; python_version >= '3.10'",
     "typing_extensions>=4.5",
+    "structlog>=24.0",
+    "typer>=0.9",
+    "rich>=13.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -57,6 +62,11 @@ memory = [
     "chromadb>=0.4",
     "sentence-transformers>=2.2",
 ]
+server = [
+    "fastapi>=0.104",
+    "uvicorn[standard]>=0.24",
+    "prometheus-client>=0.19",
+]
 notebooks = [
     "jupyter>=1.0",
     "ipykernel>=6.0",
@@ -67,19 +77,29 @@ dev = [
     "pytest>=7.4",
     "pytest-cov>=4.1",
     "pytest-asyncio>=0.21",
+    "pytest-benchmark>=4.0",
+    "hypothesis>=6.90",
+    "httpx>=0.25",
     "ruff>=0.1",
     "mypy>=1.5",
     "pre-commit>=3.4",
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.4",
+    "mkdocstrings[python]>=0.24",
 ]
 all = [
-    "chen-arch[hf,memory,notebooks,dev]",
+    "chen-arch[hf,memory,server,notebooks,dev]",
 ]
 
 [project.urls]
 Homepage = "https://github.com/your-org/chen"
-Documentation = "https://github.com/your-org/chen/blob/main/ARCHITECTURE.md"
+Documentation = "https://your-org.github.io/chen/"
 Repository = "https://github.com/your-org/chen"
 Issues = "https://github.com/your-org/chen/issues"
+Changelog = "https://github.com/your-org/chen/blob/main/CHANGELOG.md"
+
+[project.scripts]
+chen = "chen.cli.main:app"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

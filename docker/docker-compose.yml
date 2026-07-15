@@ -1,0 +1,55 @@
+# CHEN — docker-compose for local development and small production deployments
+#
+# Usage:
+#   docker compose up              # start API server on :8000
+#   docker compose run chen bench  # run benchmarks
+#   docker compose run chen run --prompt "Hello"
+
+services:
+  chen:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: chen:latest
+    container_name: chen
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist run history
+      - chen_data:/home/chen/chen_data
+      # Optional: mount local model cache to avoid re-downloading
+      # - ~/.cache/huggingface:/home/chen/.cache/huggingface:ro
+    environment:
+      - CHEN_LOG_LEVEL=INFO
+      - CHEN_LOG_JSON=0  # pretty console logs in dev
+      - CHEN_DEFAULT_BACKEND=mock
+      # For real inference, set these:
+      # - CHEN_DEFAULT_BACKEND=hf
+      # - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}
+    command: serve --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Optional: Prometheus scraping
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: chen-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - chen
+    restart: unless-stopped
+    profiles:
+      - monitoring  # only starts with: docker compose --profile monitoring up
+
+volumes:
+  chen_data:
+  prometheus_data:

@@ -53,29 +53,31 @@ def build_experts(backend: str = "mock") -> list[Expert]:
     elif backend == "hf":
         from chen.backends.hf import HuggingFaceBackend
 
+        # Real, open, non-gated HuggingFace models (no token required).
+        # Swap for larger models if you have a GPU — see .env.example.
         return [
             Expert(
                 name="analyst",
                 role=ExpertRole.ANALYST,
                 backend=HuggingFaceBackend(
-                    model_id="HuggingFaceTB/SmallCerebra-3B-Instruct",
-                    params_m=3_000,
+                    model_id="HuggingFaceTB/SmolLM2-1.7B-Instruct",
+                    params_m=1_700,
                 ),
             ),
             Expert(
                 name="reasoner",
                 role=ExpertRole.REASONER,
                 backend=HuggingFaceBackend(
-                    model_id="meta-llama/Meta-Llama-3-8B-Instruct",
-                    params_m=8_000,
+                    model_id="Qwen/Qwen2.5-3B-Instruct",
+                    params_m=3_000,
                 ),
             ),
             Expert(
                 name="synthesizer",
                 role=ExpertRole.SYNTHESIZER,
                 backend=HuggingFaceBackend(
-                    model_id="HuggingFaceTB/SmallCerebra-3B-Instruct",
-                    params_m=3_000,
+                    model_id="HuggingFaceTB/SmolLM2-1.7B-Instruct",
+                    params_m=1_700,
                 ),
             ),
         ]
